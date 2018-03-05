@@ -42,9 +42,13 @@ class Crawler
 
   def get_employer_info
     # navigates to the current employer of the employee profile we're on, gathers its profile data and makes a database entry
+    # records that entry in the database and finally returns to the employee's page
     goto_employer
     data = employer_data
     puts data
+
+    @archivist.record_employer(data)
+    @br.back
   end
 
   def employer_data

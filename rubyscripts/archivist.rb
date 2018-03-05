@@ -73,7 +73,7 @@ class Archivist
 
   def record_employer(data)
     # replaces the data for the current employer if it already exists
-    # otherwise generates a new entery
+    # otherwise inserts a new employer entry
 
     if employer_exists(data)
       update_employer(data)
@@ -106,7 +106,7 @@ class Archivist
           location = '#{data[:location]}',
           size = '#{data[:size]}',
           scrape_date = NOW()
-        
+
         WHERE name = '#{data[:name]}';
       HEREDOC
     )

@@ -1,4 +1,5 @@
-require 'watir'
-br = Watir::Browser.new :firefox
+require_relative 'rubyscripts/archivist'
 
-linkedin_address = 'https://www.linkedin.com/?originalSubdomain=au'
+archivist = Archivist.new()
+archivist.clear_database
+archivist.setup_tables()
