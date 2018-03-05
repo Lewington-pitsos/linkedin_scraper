@@ -18,4 +18,4 @@ crawler.gather_data
 
 BR = br
 
-logger.debug "scrape finished sucessfully\n\n"
+logger.debug "scrape finished successfully\n\n"

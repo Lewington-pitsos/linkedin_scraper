@@ -39,12 +39,12 @@ class Crawler
   end
 
   def gather_data
-    # records the data for the current profile's employer,
+    # records the data for the current profile's employee
     # if the employee has not already been recorded, their employer's data is recorded, their data is recorded and we move on to the next employee
     # otherwise we just move on without recording anything
     data = employee_data
 
-    if @archivist.person_already_recorded(data)
+    unless @archivist.person_already_recorded(data)
       get_employer_info
       @logger.debug("inserting employee data...")
       @archivist.insert_employee(data)
