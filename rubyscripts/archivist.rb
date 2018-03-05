@@ -22,6 +22,7 @@ class Archivist
           name VARCHAR,
           website VARCHAR,
           location VARCHAR,
+          size VARCHAR,
           scrape_date TIMESTAMP NOT NULL DEFAULT NOW(),
           PRIMARY KEY(id)
         );
@@ -77,13 +78,15 @@ class Archivist
           url,
           name,
           website,
-          location
+          location,
+          size
         )
           VALUES (
           '#{data[:url]}',
           '#{data[:name]}',
           '#{data[:website]}',
-          '#{data[:location]}'
+          '#{data[:location]}',
+          '#{data[:size]}'
         );
       HEREDOC
     )

@@ -8,6 +8,7 @@ SAMPLE_EMPLOYER = {
   name: 'Newgate Communications – Australia',
   url: 'https://www.linkedin.com/company/3267679/?lipi=urn%3Ali%3Apage%3Ad_flagship3_profile_view_base%3B3QBculZ%2FRlGYHpYZiif6gw%3D%3D&licu=urn%3Ali%3Acontrol%3Ad_flagship3_profile_view_base-background_details_company',
   location: 'Sydney, NSW',
+  size: '1000-5000 employees',
   website: 'http://www.newgatecomms.com.au'
  }
 
