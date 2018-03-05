@@ -29,8 +29,14 @@ class Crawler
 
   def first_url
     # retrieves the last 10 urls logged and returns one at random
+    # if there are no urls at all, it returns a pre-selected url
     candidates = @archivist.get_recent_employee_urls
-    candidates[rand(candidates.length)]
+
+    if candidates.length > 0
+      candidates[rand(candidates.length)]
+    else
+      'https://www.linkedin.com/in/clairetcondro/'
+    end
   end
 
   def login
@@ -77,7 +83,7 @@ class Crawler
     data = employee_data
 
     unless @archivist.person_already_recorded(data)
-      get_employer_info
+      record_employer_info
       @logger.debug("inserting employee data...")
       data[:employer_id] = @employer_id.to_i
       @archivist.insert_employee(data)
@@ -126,11 +132,12 @@ class Crawler
     info[:last_name] = last_name
   end
 
-  def get_employer_info
+  def record_employer_info
     # navigates to the current employer of the employee profile we're on, gathers its profile data and makes a database entry
     # records that entry in the database, keeps track of that employer's id and finally returns to the employee's page
-    goto_employer
-    data = employer_data
+
+    data = goto_employer
+
     @logger.debug("inserting employer data...")
     @archivist.record_employer(data)
     @employer_id = @archivist.get_employer(data[:name])
@@ -165,20 +172,39 @@ class Crawler
   def try_gathering(class_list)
     # searches for an element matching the passed in class list, and if it finds it, returns it's text content. Otherwise, returns nil
     if @br.element(:class, class_list).exists?
-      @br.element(:class, class_list).text
+      URI.escape(@br.element(:class, class_list).text)
     else
       nil
     end
   end
 
   def goto_employer
-    # finds the link for the current empoyer of the current profile, follows it and then clicks on the "show more" button to reveal full profile details
+    # finds the link for the current empoyer of the current profile and follows it
+    # the data for that employer is then gathered and returned
     current_employer = @br.element(:class, "pv-entity__secondary-title")
+    employer_name = current_employer.text
     @logger.debug("navigating to employer page for #{current_employer.text}")
     current_employer.click()
-    @br.element(:id, "org-about-company-module__show-details-btn").click()
-    # this does not take effect immediately
-    sleep 3
+
+    sleep 2
+
+    get_employer_data(employer_name)
+  end
+
+  def get_employer_data(employer_name)
+    # checks whether there is an employer title on the page
+    # if so, all employer data is gathered, and returned
+    # otherwise (because some employers aren't listed) a dummy employer data hash is created with only a name
+    if @br.element(:class, "org-top-card-module__name").exists?
+      @logger.debug("Gathering full employer data")
+      @br.element(:id, "org-about-company-module__show-details-btn").click()
+      # this does not take effect immediately
+      sleep 3
+      employer_data
+    else
+      @logger.debug("Employer not registered, recording dummy employer")
+      {name: employer_name}
+    end
   end
 
 end
