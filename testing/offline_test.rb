@@ -12,6 +12,22 @@ SAMPLE_EMPLOYER = {
   website: 'http://www.newgatecomms.com.au'
  }
 
+ SAMPLE_NEW_EMPLOYER = {
+   name: 'Newgate Communications – Greece',
+   url: 'https://www.linkedin.com/company/3267679/?lipi=urn%3Ali%3Apage%3Ad_flagship3_profile_view_base%3B3QBculZ%2FRlGYHpYZiif6gw%3D%3D&licu=urn%3Ali%3Acontrol%3Ad_flagship3_profile_view_base-background_details_company',
+   location: 'Sydney, NSW',
+   size: '4000-9000 employees',
+   website: 'http://www.newgatecomms.com.au'
+  }
+
+ SAMPLE_UPDATED_EMPLOYER = {
+   name: 'Newgate Communications – Australia',
+   url: 'https://www.linkedin.com/company/3267679/?lipi=urn%3Ali%3Apage%3Ad_flagship3_profile_view_base%3B3QBculZ%2FRlGYHpYZiif6gw%3D%3D&licu=urn%3Ali%3Acontrol%3Ad_flagship3_profile_view_base-background_details_company',
+   location: 'Sydney, ACT',
+   size: '5000-9000 employees',
+   website: 'http://www.nnnn.com.au'
+  }
+
  SAMPLE_PERSON =  {
    url: 'https://www.linkedin.com/in/sophie-mitchell-447471a1/',
    first_name: 'Sophie',
@@ -39,23 +55,39 @@ class OfflineTests < Minitest::Test
   end
 
   def test_archivist_inserts_employer
-    @archivist.insert_employer(SAMPLE_EMPLOYER)
+    @archivist.record_employer(SAMPLE_EMPLOYER)
     refute_empty @archivist.get_all('employers')
     assert_equal "1", @archivist.get_all('employers')[0][0]
   end
 
-  def test_archive_inserts_person
-    @archivist.insert_employer(SAMPLE_EMPLOYER)
+  def test_archiveist_inserts_person
+    @archivist.record_employer(SAMPLE_EMPLOYER)
     @archivist.insert_person(SAMPLE_PERSON)
     @archivist.get_all('people')
     assert_equal "1", @archivist.get_all('people')[0][0]
   end
 
   def test_archivist_gets_recent_urls
-    @archivist.insert_employer(SAMPLE_EMPLOYER)
+    @archivist.record_employer(SAMPLE_EMPLOYER)
     @archivist.insert_person(SAMPLE_PERSON)
     assert @archivist.get_recent_people_urls()
     assert_equal "https://www.linkedin.com/in/sophie-mitchell-447471a1/", @archivist.get_recent_people_urls()[0]
+  end
+
+  def test_archivist_updates_employer
+    @archivist.record_employer(SAMPLE_EMPLOYER)
+    assert_equal 'Newgate Communications – Australia', @archivist.get_all('employers')[0][2]
+    @archivist.record_employer(SAMPLE_UPDATED_EMPLOYER)
+    assert_equal 'Newgate Communications – Australia', @archivist.get_all('employers')[0][2]
+    assert_equal '5000-9000 employees', @archivist.get_all('employers')[0][5]
+  end
+
+  def test_archivist_updates_only_when_needed
+    @archivist.record_employer(SAMPLE_EMPLOYER)
+    assert_equal 'Newgate Communications – Australia', @archivist.get_all('employers')[0][2]
+    @archivist.record_employer(SAMPLE_NEW_EMPLOYER)
+    assert_equal 'Newgate Communications – Australia', @archivist.get_all('employers')[0][2]
+    assert_equal '1000-5000 employees', @archivist.get_all('employers')[0][5]
   end
 
   def teardown
