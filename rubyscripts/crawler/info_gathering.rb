@@ -1,3 +1,9 @@
+=begin
+
+Broadly this module contains methods that (a) concern the gathering of data from profile pages and (b) actually contain Watir selectors in order to do that gathering.
+
+=end
+
 module InfoGathering
   def employee_info
     # gathers the relevent profile info from the page into a hash

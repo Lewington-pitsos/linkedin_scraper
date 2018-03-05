@@ -1,26 +1,47 @@
-#
+=begin
+
+Broadly Crawler has three components:
+  Setup
+
+    Triggered once. Gets everything in place for potentially indefinite scrapes by logging on to linkedin and navigating to an innitial profile
+
+  Gathering Cycle
+
+    The data from this profile is gathered through the DOM and recorded to a database (with the help of an Archivist instance). At the end of this cycle we trigger the Navigatin Cycle. The Gathering Cycle can be cut short if some data is missing (as it invariably will be sometimes).
+
+  Navigating Cycle
+
+    This profile is searched for links to other profiles. If any are found we navigate to one chosen at random. Otherwise we search our current database for past linkes and follow one of those. Once a new profile has been reached we trigger the Gathering cycle.
+
+Recursive calls between the Navigating and Gathering cycles could theoretically continue indefinitly. However Crawler is also passed in a scrapes_needed argument (int), and after that many profiles have been scraped, Crawler considers the scrape a success and terminates everything.
+
+
+=end
+
+
+require_relative './crawler/login'
 require_relative './crawler/info_gathering'
-require_relative './crawler/setup'
+require_relative './crawler/navigating'
 require_relative './archivist'
 
 class Crawler
+  include Login
   include InfoGathering
-  include Setup
+  include Navigating
 
   attr_accessor :logger, :br, :archivist, :employer_id, :scrapes_needed, :scrapes
 
   @@login_page = 'https://www.linkedin.com/?originalSubdomain=au'
 
-  def initialize(logger, br, scrapes_needed)
+  # ======== Setup ===========
+
+  def initialize(logger, browser, scrapes_needed)
     @logger = logger
-    @br = br
+    @br = browser
     @archivist = Archivist.new
 
     @scrapes_needed = scrapes_needed
     @scrapes = 0
-
-    logger.debug "Starting new scrape"
-    br.goto(@@login_page)
   end
 
   def scrape
@@ -30,40 +51,10 @@ class Crawler
     gather_employee_info
   end
 
-  def goto_next_person
-    # gathers all the "people also viwed" profiles into a collection, selects a random profile, and navigates to it
-    # triggers the gathering of info for that new profile
-
-    if @scrapes < @scrapes_needed
-      logger.debug "finding next profile..."
-      visit_profile
-
-      sleep 3
-      gather_employee_info
-    else
-      @logger.debug "scrape finished successfully\n\n\n\n"
-    end
-
-  end
-
-  def visit_profile
-    # locates all the profile links,
-    # if there are any, selects one at random, and performs a javascript click action on it
-    # otherwise, navigates back one profile and tries again
-    profiles = @br.elements(:class, ["name", "actor-name"]).length
-    @logger.debug("number of associated profiles: #{profiles}")
-    if profiles > 0
-      @br.execute_script("document.getElementsByClassName('name actor-name')[#{rand(profiles)}].click()")
-    else
-      @br.goto(first_url)
-      sleep 3
-      visit_profile
-    end
-  end
+  # ======== Gathering Cycle ===========
 
   def gather_employee_info
-    # records the info for the current profile's employee
-    # if the employee has not already been recorded, their employer's info is recorded, their info is recorded, we add to the number of succesfull scrapes and we move on to the next employee
+    # if the employee has not already been recorded and their profile contains a link to their most recent employer, we gather and record all info for that employee and their employer
     # otherwise we just move to next employee without recording anything
     info = employee_info
     employer_link = @br.element(:class, "pv-entity__secondary-title")
@@ -71,12 +62,12 @@ class Crawler
     if !@archivist.person_already_recorded(info) && employer_link.exists?
       record_profile_info(info, employer_link)
     else
-      @logger.info("already scraped #{@br.url}")
+      @logger.info("#{@br.url} has already been scraped")
     end
 
     sleep(3)
     @logger.debug("moving to next employee\n\n")
-    goto_next_person
+    scrape_next_employee
   end
 
   def record_profile_info(info, employer_link)
@@ -86,13 +77,6 @@ class Crawler
     @br.back
     @logger.debug("inserting employee info...")
     record_employee_info(info)
-  end
-
-  def record_employee_info(info)
-    # adds an employer_id to the passed in info hash, saves it to the employee relation and records that another profile has been successfully scraped
-    info[:employer_id] = @employer_id.to_i
-    @archivist.insert_employee(info)
-    @scrapes += 1
   end
 
   def gather_employer_info(employer_link)
@@ -113,5 +97,34 @@ class Crawler
     @archivist.record_employer(info)
     @employer_id = @archivist.get_employer(info[:name])
     @logger.debug(@archivist.get_employer(info[:name]))
+  end
+
+  def record_employee_info(info)
+    # adds an employer_id to the passed in info hash, saves it to the employee relation and records that another profile has been successfully scraped
+    info[:employer_id] = @employer_id.to_i
+    @archivist.insert_employee(info)
+    @scrapes += 1
+  end
+
+  # ======== Navigating Cycle ===========
+
+  def scrape_next_employee
+    # gathers all the "people also viwed" profiles into a collection, selects a random profile, and navigates to it
+    # triggers the gathering of info for that new profile
+
+    if @scrapes < @scrapes_needed
+      scrape_profile
+    else
+      @logger.debug "scrape finished successfully\n\n\n\n"
+    end
+  end
+
+  def scrape_profile
+    # navigates to the next employee profile and gathers/records it's info
+    logger.debug "finding next profile..."
+    visit_profile
+
+    sleep 3
+    gather_employee_info
   end
 end
