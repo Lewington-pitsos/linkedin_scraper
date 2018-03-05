@@ -31,8 +31,6 @@ class Crawler
 
   attr_accessor :logger, :br, :archivist, :employer_id, :scrapes_needed, :scrapes
 
-  @@login_page = 'https://www.linkedin.com/?originalSubdomain=au'
-
   # ======== Setup ===========
 
   def initialize(logger, browser, scrapes_needed)

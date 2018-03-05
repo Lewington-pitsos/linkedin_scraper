@@ -1,4 +1,6 @@
 module SetupHelper
+  @@login_page = 'https://www.linkedin.com/?originalSubdomain=au'
+
   def login
     @logger.debug "Starting new scrape"
     @br.goto(@@login_page)
