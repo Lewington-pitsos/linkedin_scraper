@@ -32,8 +32,8 @@ class Crawler
     # if there are no urls at all, it returns a pre-selected url
     candidates = @archivist.get_recent_employee_urls
 
-    if candidates.length > 0
-      candidates[rand(candidates.length)]
+    if candidates.length > 1
+      URI.unescape(candidates[rand(candidates.length)], "'")
     else
       'https://www.linkedin.com/in/clairetcondro/'
     end
@@ -71,9 +71,17 @@ class Crawler
   end
 
   def visit_profile
-    # locates all the profile links, selects one at random, and performs a javascript click action on it
+    # locates all the profile links,
+    # if there are any, selects one at random, and performs a javascript click action on it
+    # otherwise, navigates back one profile and tries again
     profiles = @br.elements(:class, ["name", "actor-name"]).length
-    @br.execute_script("document.getElementsByClassName('name actor-name')[#{rand(profiles)}].click()")
+    if profiles
+      @br.execute_script("document.getElementsByClassName('name actor-name')[#{rand(profiles)}].click()")
+    else
+      @br.goto(first_url)
+      visit_profile
+    end
+
   end
 
   def gather_data
@@ -104,15 +112,15 @@ class Crawler
 
     employee_info = {}
 
-    url = @br.url
+    url = URI.escape(@br.url, "'")
     employee_info[:url] = url
 
     get_employee_name(employee_info)
 
-    current_job = @br.element(:class, "pv-top-card-section__headline").text
+    current_job = try_gathering("pv-top-card-section__headline")
     employee_info[:current_job] = current_job
 
-    location = @br.element(:class, "pv-top-card-section__location").text
+    location = try_gathering("pv-top-card-section__location")
     employee_info[:location] = location
 
     employee_info
@@ -154,7 +162,7 @@ class Crawler
     name = try_gathering("org-top-card-module__name")
     employer_info[:name] = name
 
-    url = @br.url
+    url = URI.escape(@br.url, "'")
     employer_info[:url] = url
 
     website = try_gathering("org-about-company-module__company-page-url")
@@ -172,7 +180,7 @@ class Crawler
   def try_gathering(class_list)
     # searches for an element matching the passed in class list, and if it finds it, returns it's text content. Otherwise, returns nil
     if @br.element(:class, class_list).exists?
-      URI.escape(@br.element(:class, class_list).text)
+      URI.escape(@br.element(:class, class_list).text, "'")
     else
       nil
     end
@@ -196,7 +204,7 @@ class Crawler
     # if so, all employer data is gathered, and returned
     # otherwise (because some employers aren't listed) a dummy employer data hash is created with only a name
     if @br.element(:class, "org-top-card-module__name").exists?
-      @logger.debug("Gathering full employer data")
+      @logger.debug("Employer registered, gathering full employer data")
       @br.element(:id, "org-about-company-module__show-details-btn").click()
       # this does not take effect immediately
       sleep 3
