@@ -1,8 +1,8 @@
-module DataGathering
-  def employee_data
-    # gathers the relevent profile data from the page into a hash
+module InfoGathering
+  def employee_info
+    # gathers the relevent profile info from the page into a hash
     # adds the most recently recorded employer id
-    @logger.debug("gathering data from: #{@br.url}")
+    @logger.debug("gathering info from: #{@br.url}")
 
     employee_info = {}
 
@@ -43,10 +43,26 @@ module DataGathering
     end
   end
 
-  def employer_data
+  def get_employer_info(employer_name)
+    # checks whether there is an employer title on the page
+    # if so, all employer info is gathered, and returned
+    # otherwise (because some employers aren't listed) a dummy employer info hash is created with only a name
+    if @br.element(:class, "org-top-card-module__name").exists?
+      @logger.debug("Employer registered, gathering full employee info")
+      @br.element(:id, "org-about-company-module__show-details-btn").click()
+      # this does not take effect immediately
+      sleep 3
+      employer_info
+    else
+      @logger.warn("Employer not registered, recording dummy employer")
+      {name: employer_name}
+    end
+  end
+
+  def employer_info
     # expects to be run when on an employer's profile
-    # returns all the data relevent to that employer in a hash
-    @logger.debug("gathering data from: #{@br.url}")
+    # returns all the info relevent to that employer in a hash
+    @logger.debug("gathering info from: #{@br.url}")
     employer_info =  {}
 
     name = try_gathering("org-top-card-module__name")
