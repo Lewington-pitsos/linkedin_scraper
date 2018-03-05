@@ -4,20 +4,18 @@ require 'watir'
 require_relative './rubyscripts/crawler'
 
 logger = Logger.new 'scrape.log'
-logger.debug "Starting new scrape"
-
-crawler = Crawler.new(logger)
+br = Watir::Browser.new :firefox
+crawler = Crawler.new(logger, br)
 
 alec_welby = "https://www.linkedin.com/in/alec-webley-2b900531/"
 
-br = Watir::Browser.new :firefox
-br.goto('https://www.linkedin.com/?originalSubdomain=au')
-
-crawler.login(br, logger)
+crawler.login
 
 logger.debug "going to Alex Welby's profile"
 br.goto(alec_welby)
 
+crawler.get_employer_info
+
 BR = br
 
-logger.debug "scrape finished sucessfully"
+logger.debug "scrape finished sucessfully\n\n"
