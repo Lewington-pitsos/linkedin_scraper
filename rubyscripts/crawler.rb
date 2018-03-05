@@ -38,33 +38,21 @@ class Crawler
 
   end
 
-  def scrape_employee
-    # checks if this employee has been scraped before, and moves on to the next one if he/she has
-    if new_employee
-      gather_data
-    else
-      @logger.debug("already scraped #{@br.url} heading to next person")
-      goto_next_person
-    end
-  end
-
-  def new_employee
-
-  end
-
   def gather_data
-    # records the data for the current profile's employer, then goes back and records the data for the current profile
-    get_employer_info
-    get_employee_info
-    @logger.debug("moving to next employee")
-  end
-
-  def get_employee_info
-    # gathers all data for the current profile into a hash and records it
+    # records the data for the current profile's employer,
+    # if the employee has not already been recorded, their employer's data is recorded, their data is recorded and we move on to the next employee
+    # otherwise we just move on without recording anything
     data = employee_data
 
-    @logger.debug("inserting employee data...")
-    @archivist.insert_employee(data)
+    if @archivist.person_already_recorded(data)
+      get_employer_info
+      @logger.debug("inserting employee data...")
+      @archivist.insert_employee(data)
+    else
+      @logger.debug("already scraped #{@br.url}")
+    end
+
+    @logger.debug("moving to next employee")
   end
 
   def employee_data

@@ -155,6 +155,17 @@ class Archivist
     )
   end
 
+  def person_already_recorded(data)
+    self.db.exec(
+      <<~HEREDOC
+        SELECT * FROM people
+        WHERE url = '#{data[:url]}'
+          AND first_name = '#{data[:first_name]}'
+          AND last_name = '#{data[:last_name]}';
+      HEREDOC
+    ).ntuples > 0
+  end
+
   def get_all(name)
     # returns all the data from that database as an array (of arrays)
     self.db.exec(

@@ -38,6 +38,16 @@ SAMPLE_EMPLOYER = {
    employer_id: 1
  }
 
+ SAMPLE_NEW_PERSON = {
+   url: 'https://www.linkedin.com/in/sophie-mitch/',
+   first_name: 'Sophie',
+   last_name: 'Mitchell',
+   current_job: 'Associate Partner at Newgate Communications – Australia',
+   country: 'Australia',
+   further_location: 'Melbourne',
+   employer_id: 1
+ }
+
 class OfflineTests < Minitest::Test
 
   def setup
@@ -88,6 +98,15 @@ class OfflineTests < Minitest::Test
     @archivist.record_employer(SAMPLE_NEW_EMPLOYER)
     assert_equal 'Newgate Communications – Australia', @archivist.get_all('employers')[0][2]
     assert_equal '1000-5000 employees', @archivist.get_all('employers')[0][5]
+  end
+
+  def test_picks_up_same_person
+    @archivist.record_employer(SAMPLE_EMPLOYER)
+    @archivist.insert_employee(SAMPLE_PERSON)
+    assert @archivist.get_recent_people_urls()
+    assert_equal "https://www.linkedin.com/in/sophie-mitchell-447471a1/", @archivist.get_recent_people_urls()[0]
+    assert @archivist.person_already_recorded(SAMPLE_PERSON)
+    refute @archivist.person_already_recorded(SAMPLE_NEW_PERSON)
   end
 
   def teardown
