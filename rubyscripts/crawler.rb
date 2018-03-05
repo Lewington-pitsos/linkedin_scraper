@@ -20,6 +20,19 @@ class Crawler
     br.goto(@@login_page)
   end
 
+  def scrape
+    login
+    @br.goto(first_url)
+    @logger.debug("beginning scrape at #{@br.url}")
+    gather_data
+  end
+
+  def first_url
+    # retrieves the last 10 urls logged and returns one at random
+    candidates = @archivist.get_recent_employee_urls
+    candidates[rand(candidates.length)]
+  end
+
   def login
     @logger.debug "login process starting"
     # fills the email and password fields with some text and clicks the login button
@@ -46,7 +59,7 @@ class Crawler
       sleep 3
       gather_data
     else
-      @logger.debug "scrape finished successfully\n\n"
+      @logger.debug "scrape finished successfully\n\n\n\n"
     end
 
   end
@@ -74,7 +87,7 @@ class Crawler
     end
 
     sleep(3)
-    @logger.debug("moving to next employee")
+    @logger.debug("moving to next employee\n\n")
     goto_next_person
   end
 

@@ -80,7 +80,7 @@ class OfflineTests < Minitest::Test
   def test_archivist_gets_recent_urls
     @archivist.record_employer(SAMPLE_EMPLOYER)
     @archivist.insert_employee(SAMPLE_PERSON)
-    assert @archivist.get_recent_people_urls()
+    assert @archivist.get_recent_employee_urls()
     assert_equal "https://www.linkedin.com/in/sophie-mitchell-447471a1/", @archivist.get_recent_people_urls()[0]
   end
 

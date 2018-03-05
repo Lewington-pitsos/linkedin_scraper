@@ -61,7 +61,7 @@ class Archivist
     )
   end
 
-  def get_recent_people_urls
+  def get_recent_employee_urls
     # returnes a flat array of the last 10 urls logged
     self.db.exec(
       <<~HEREDOC
