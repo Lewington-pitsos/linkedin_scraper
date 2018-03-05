@@ -60,16 +60,16 @@ class OfflineTests < Minitest::Test
     assert_equal "1", @archivist.get_all('employers')[0][0]
   end
 
-  def test_archiveist_inserts_person
+  def test_archiveist_inserts_employee
     @archivist.record_employer(SAMPLE_EMPLOYER)
-    @archivist.insert_person(SAMPLE_PERSON)
+    @archivist.insert_employee(SAMPLE_PERSON)
     @archivist.get_all('people')
     assert_equal "1", @archivist.get_all('people')[0][0]
   end
 
   def test_archivist_gets_recent_urls
     @archivist.record_employer(SAMPLE_EMPLOYER)
-    @archivist.insert_person(SAMPLE_PERSON)
+    @archivist.insert_employee(SAMPLE_PERSON)
     assert @archivist.get_recent_people_urls()
     assert_equal "https://www.linkedin.com/in/sophie-mitchell-447471a1/", @archivist.get_recent_people_urls()[0]
   end

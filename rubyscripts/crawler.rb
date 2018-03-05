@@ -2,6 +2,8 @@ require_relative './archivist'
 
 class Crawler
 
+  attr_accessor :logger, :br, :archivist, :employer_id
+
   @@login_page = 'https://www.linkedin.com/?originalSubdomain=au'
 
   def initialize(logger, br)
@@ -36,18 +38,80 @@ class Crawler
 
   end
 
-  def gather_data
+  def scrape_employee
+    # checks if this employee has been scraped before, and moves on to the next one if he/she has
+    if new_employee
+      gather_data
+    else
+      @logger.debug("already scraped #{@br.url} heading to next person")
+      goto_next_person
+    end
+  end
 
+  def new_employee
+
+  end
+
+  def gather_data
+    # records the data for the current profile's employer, then goes back and records the data for the current profile
+    get_employer_info
+    get_employee_info
+    @logger.debug("moving to next employee")
+  end
+
+  def get_employee_info
+    # gathers all data for the current profile into a hash and records it
+    data = employee_data
+
+    @logger.debug("inserting employee data...")
+    @archivist.insert_employee(data)
+  end
+
+  def employee_data
+    # gathers the relevent profile data from the page into a hash
+    # adds the most recently recorded employer id
+    @logger.debug("gathering data from: #{@br.url}")
+
+    employee_info = {}
+
+    url = @br.url
+    employee_info[:url] = url
+
+    get_employee_name(employee_info)
+
+    current_job = @br.element(:class, "pv-top-card-section__headline").text
+    employee_info[:current_job] = current_job
+
+    location = @br.element(:class, "pv-top-card-section__location").text
+    employee_info[:location] = location
+
+    employee_info[:employer_id] = @employer_id
+
+    employee_info
+  end
+
+  def get_whole_name
+    @br.element(:class, "pv-top-card-section__name").text
+  end
+
+  def get_employee_name(info)
+    # finds the employee's name on the current page and saves the first and last name components of that name to the passed in info hash.
+    # the first name is all the characters up till the first whitespace character
+    whole_name = get_whole_name
+    first_name = whole_name.match(/^.*?\s/)[0].strip
+    last_name = whole_name.match(/\s.*?$/)[0].strip
+    info[:first_name] = first_name
+    info[:last_name] = last_name
   end
 
   def get_employer_info
     # navigates to the current employer of the employee profile we're on, gathers its profile data and makes a database entry
-    # records that entry in the database and finally returns to the employee's page
+    # records that entry in the database, keeps track of that employer's id and finally returns to the employee's page
     goto_employer
     data = employer_data
-    puts data
-
+    @logger.debug("inserting employer data...")
     @archivist.record_employer(data)
+    @employer_id = @archivist.get_employer(data[:name])
     @br.back
   end
 

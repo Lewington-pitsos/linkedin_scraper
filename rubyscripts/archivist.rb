@@ -33,8 +33,7 @@ class Archivist
           first_name VARCHAR,
           last_name VARCHAR,
           current_job VARCHAR,
-          country VARCHAR,
-          further_location VARCHAR,
+          location VARCHAR,
           employer_id INTEGER REFERENCES employers(id) ON DELETE CASCADE,
           scrape_date TIMESTAMP NOT NULL DEFAULT NOW(),
           PRIMARY KEY(id)
@@ -133,7 +132,7 @@ class Archivist
     )
   end
 
-  def insert_person(data)
+  def insert_employee(data)
     self.db.exec(
       <<~HEREDOC
         INSERT INTO people (
@@ -141,8 +140,7 @@ class Archivist
             first_name,
             last_name,
             current_job,
-            country,
-            further_location,
+            location,
             employer_id
         )
           VALUES (
@@ -150,8 +148,7 @@ class Archivist
             '#{data[:first_name]}',
             '#{data[:last_name]}',
             '#{data[:current_job]}',
-            '#{data[:country]}',
-            '#{data[:further_location]}',
+            '#{data[:location]}',
             '#{data[:employer_id]}'
           );
       HEREDOC
@@ -160,11 +157,21 @@ class Archivist
 
   def get_all(name)
     # returns all the data from that database as an array (of arrays)
-    ret = self.db.exec(
+    self.db.exec(
       <<~HEREDOC
         SELECT * FROM #{name};
       HEREDOC
     ).values
+  end
+
+  def get_employer(name)
+    # returns the id of the employer with the passed in name
+    self.db.exec(
+      <<~HEREDOC
+        SELECT * FROM employers
+        WHERE name = '#{name}';
+      HEREDOC
+    ).values[0][0]
   end
 
 end

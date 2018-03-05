@@ -14,7 +14,7 @@ crawler.login
 logger.debug "going to Alex Welby's profile"
 br.goto(alec_welby)
 
-crawler.get_employer_info
+crawler.gather_data
 
 BR = br
 
