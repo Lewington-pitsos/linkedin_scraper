@@ -80,6 +80,7 @@ class Crawler
       @br.execute_script("document.getElementsByClassName('name actor-name')[#{rand(profiles)}].click()")
     else
       @br.goto(first_url)
+      sleep 3
       visit_profile
     end
 
@@ -90,15 +91,16 @@ class Crawler
     # if the employee has not already been recorded, their employer's data is recorded, their data is recorded, we add to the number of succesfull scrapes and we move on to the next employee
     # otherwise we just move to next employee without recording anything
     data = employee_data
+    current_employer = @br.element(:class, "pv-entity__secondary-title")
 
-    unless @archivist.person_already_recorded(data)
-      record_employer_info
+    unless @archivist.person_already_recorded(data) && current_employer.exists?
+      record_employer_info(current_employer)
       @logger.debug("inserting employee data...")
       data[:employer_id] = @employer_id.to_i
       @archivist.insert_employee(data)
       @scrapes += 1
     else
-      @logger.debug("already scraped #{@br.url}")
+      @logger.info("already scraped #{@br.url}")
     end
 
     sleep(3)
@@ -141,11 +143,11 @@ class Crawler
     info[:last_name] = last_name
   end
 
-  def record_employer_info
+  def record_employer_info(current_employer)
     # navigates to the current employer of the employee profile we're on, gathers its profile data and makes a database entry
     # records that entry in the database, keeps track of that employer's id and finally returns to the employee's page
 
-    data = goto_employer
+    data = goto_employer(current_employer)
 
     @logger.debug("inserting employer data...")
     @archivist.record_employer(data)
@@ -187,10 +189,9 @@ class Crawler
     end
   end
 
-  def goto_employer
+  def goto_employer(current_employer)
     # finds the link for the current empoyer of the current profile and follows it
     # the data for that employer is then gathered and returned
-    current_employer = @br.element(:class, "pv-entity__secondary-title")
     employer_name = current_employer.text
     @logger.debug("navigating to employer page for #{current_employer.text}")
     current_employer.click()
@@ -211,7 +212,7 @@ class Crawler
       sleep 3
       employer_data
     else
-      @logger.debug("Employer not registered, recording dummy employer")
+      @logger.warn("Employer not registered, recording dummy employer")
       {name: employer_name}
     end
   end
