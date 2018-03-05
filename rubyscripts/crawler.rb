@@ -3,7 +3,7 @@
 Broadly Crawler has three components:
   Setup
 
-    Triggered once. Gets everything in place for potentially indefinite scrapes by logging on to linkedin and navigating to an innitial profile
+    Triggered once. Gets everything in place for potentially indefinite scrapes by logging on to linkedin and navigating to an innitial profile.
 
   Gathering Cycle
 
@@ -19,13 +19,13 @@ Recursive calls between the Navigating and Gathering cycles could theoretically 
 =end
 
 
-require_relative './crawler/login'
+require_relative './crawler/setup_helper'
 require_relative './crawler/info_gathering'
 require_relative './crawler/navigating'
 require_relative './archivist'
 
 class Crawler
-  include Login
+  include SetupHelper
   include InfoGathering
   include Navigating
 
@@ -42,13 +42,27 @@ class Crawler
 
     @scrapes_needed = scrapes_needed
     @scrapes = 0
+
+    @fails = 0
   end
 
-  def scrape
+  def begin_scraping
+    # logs in and triggers a new scrape
     login
+    new_scrape
+  end
+
+  def new_scrape
+    # finds an innitial url and navigates to it
+    # starts gather >>> navigate >>> gather recursion
+    # if there are ANY errors raised during recursion we rescue the scrape by starting a new one
     @br.goto(first_url)
     @logger.debug("beginning scrape at #{@br.url}")
-    gather_employee_info
+    begin
+      gather_employee_info
+    rescue
+      rescue_scrape
+    end
   end
 
   # ======== Gathering Cycle ===========
