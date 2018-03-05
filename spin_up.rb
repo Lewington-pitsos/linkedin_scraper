@@ -5,7 +5,7 @@ require_relative './rubyscripts/crawler'
 
 logger = Logger.new 'scrape.log'
 br = Watir::Browser.new :firefox
-crawler = Crawler.new(logger, br)
+crawler = Crawler.new(logger, br, 4)
 
 alec_welby = "https://www.linkedin.com/in/alec-webley-2b900531/"
 
@@ -14,8 +14,6 @@ crawler.login
 logger.debug "going to Alex Welby's profile"
 br.goto(alec_welby)
 
-crawler.gather_data
-
 BR = br
 
-logger.debug "scrape finished successfully\n\n"
+crawler.gather_data

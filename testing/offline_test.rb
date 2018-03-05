@@ -109,6 +109,11 @@ class OfflineTests < Minitest::Test
     refute @archivist.person_already_recorded(SAMPLE_NEW_PERSON)
   end
 
+  def test_gets_employer_id
+    @archivist.record_employer(SAMPLE_EMPLOYER)
+    assert_equal '1', @archivist.get_employer(SAMPLE_EMPLOYER[:name])
+  end
+
   def teardown
     @archivist.clear_database()
   end

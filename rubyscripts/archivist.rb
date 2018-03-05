@@ -149,7 +149,7 @@ class Archivist
             '#{data[:last_name]}',
             '#{data[:current_job]}',
             '#{data[:location]}',
-            '#{data[:employer_id]}'
+            #{data[:employer_id]}
           );
       HEREDOC
     )

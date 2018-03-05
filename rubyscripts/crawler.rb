@@ -1,15 +1,20 @@
+#
+
 require_relative './archivist'
 
 class Crawler
 
-  attr_accessor :logger, :br, :archivist, :employer_id
+  attr_accessor :logger, :br, :archivist, :employer_id, :scrapes_needed, :scrapes
 
   @@login_page = 'https://www.linkedin.com/?originalSubdomain=au'
 
-  def initialize(logger, br)
+  def initialize(logger, br, scrapes_needed)
     @logger = logger
     @br = br
     @archivist = Archivist.new
+
+    @scrapes_needed = scrapes_needed
+    @scrapes = 0
 
     logger.debug "Starting new scrape"
     br.goto(@@login_page)
@@ -30,29 +35,47 @@ class Crawler
   end
 
   def goto_next_person
-    logger.debug "finding next profile..."
     # gathers all the "people also viwed" profiles into a collection, selects a random profile, and navigates to it
-    people = @br.elements(:class, ["name", "actor-name"])
+    # triggers the gathering of data for that new profile
 
-    random = people[rand(people.length)]
+    if @scrapes < @scrapes_needed
+      logger.debug "finding next profile..."
 
+      visit_profile
+
+      sleep 3
+      gather_data
+    else
+      @logger.debug "scrape finished successfully\n\n"
+    end
+
+  end
+
+  def visit_profile
+    # locates all the profile links, selects one at random, and performs a javascript click action on it
+    profiles = @br.elements(:class, ["name", "actor-name"]).length
+    @br.execute_script("document.getElementsByClassName('name actor-name')[#{rand(profiles)}].click()")
   end
 
   def gather_data
     # records the data for the current profile's employee
-    # if the employee has not already been recorded, their employer's data is recorded, their data is recorded and we move on to the next employee
-    # otherwise we just move on without recording anything
+    # if the employee has not already been recorded, their employer's data is recorded, their data is recorded, we add to the number of succesfull scrapes and we move on to the next employee
+    # otherwise we just move to next employee without recording anything
     data = employee_data
 
     unless @archivist.person_already_recorded(data)
       get_employer_info
       @logger.debug("inserting employee data...")
+      data[:employer_id] = @employer_id.to_i
       @archivist.insert_employee(data)
+      @scrapes += 1
     else
       @logger.debug("already scraped #{@br.url}")
+      sleep(3)
     end
 
     @logger.debug("moving to next employee")
+    goto_next_person
   end
 
   def employee_data
@@ -72,8 +95,6 @@ class Crawler
 
     location = @br.element(:class, "pv-top-card-section__location").text
     employee_info[:location] = location
-
-    employee_info[:employer_id] = @employer_id
 
     employee_info
   end
@@ -100,6 +121,7 @@ class Crawler
     @logger.debug("inserting employer data...")
     @archivist.record_employer(data)
     @employer_id = @archivist.get_employer(data[:name])
+    @logger.debug(@archivist.get_employer(data[:name]))
     @br.back
   end
 
