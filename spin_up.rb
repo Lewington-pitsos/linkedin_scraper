@@ -30,6 +30,10 @@ def goto_next_person(br)
 
 end
 
+def gather_data(br)
+
+end
+
 
 br = Watir::Browser.new :firefox
 br.goto('https://www.linkedin.com/?originalSubdomain=au')
