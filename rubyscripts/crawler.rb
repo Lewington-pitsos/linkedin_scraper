@@ -1,9 +1,11 @@
 #
 require_relative './crawler/data_gathering'
+require_relative './crawler/setup'
 require_relative './archivist'
 
 class Crawler
   include DataGathering
+  include Setup
 
   attr_accessor :logger, :br, :archivist, :employer_id, :scrapes_needed, :scrapes
 
@@ -26,32 +28,6 @@ class Crawler
     @br.goto(first_url)
     @logger.debug("beginning scrape at #{@br.url}")
     gather_data
-  end
-
-  def first_url
-    # retrieves the last 10 urls logged and returns one at random
-    # if there are no urls at all, it returns a pre-selected url
-    candidates = @archivist.get_recent_employee_urls
-
-    if candidates.length > 0
-      URI.unescape(candidates[rand(candidates.length)], "'")
-    else
-      'https://www.linkedin.com/in/clairetcondro/'
-    end
-  end
-
-  def login
-    @logger.debug "login process starting"
-    # fills the email and password fields with some text and clicks the login button
-    # once this is finished, we should have logged into this Linkedin Account
-
-    email = @br.text_field(:id, "login-email")
-    email.set("idof@live.com.au")
-
-    pass = @br.text_field(:id, "login-password")
-    pass.set("q1as1z2")
-
-    @br.element(:id, "login-submit").click()
   end
 
   def goto_next_person
@@ -120,39 +96,6 @@ class Crawler
     @employer_id = @archivist.get_employer(data[:name])
     @logger.debug(@archivist.get_employer(data[:name]))
     @br.back
-  end
-
-  def employer_data
-    # expects to be run when on an employer's profile
-    # returns all the data relevent to that employer in a hash
-    @logger.debug("gathering data from: #{@br.url}")
-    employer_info =  {}
-
-    name = try_gathering("org-top-card-module__name")
-    employer_info[:name] = name
-
-    url = URI.escape(@br.url, "'")
-    employer_info[:url] = url
-
-    website = try_gathering("org-about-company-module__company-page-url")
-    employer_info[:website] = website
-
-    location = try_gathering("org-about-company-module__headquarters")
-    employer_info[:location] = location
-
-    size = try_gathering("org-about-company-module__company-staff-count-range")
-    employer_info[:size] = size
-
-    employer_info
-  end
-
-  def try_gathering(class_list)
-    # searches for an element matching the passed in class list, and if it finds it, returns it's text content. Otherwise, returns nil
-    if @br.element(:class, class_list).exists?
-      URI.escape(@br.element(:class, class_list).text, "'")
-    else
-      nil
-    end
   end
 
   def goto_employer(current_employer)
