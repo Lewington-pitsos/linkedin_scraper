@@ -71,9 +71,9 @@ class Crawler
       @scrapes += 1
     else
       @logger.debug("already scraped #{@br.url}")
-      sleep(3)
     end
 
+    sleep(3)
     @logger.debug("moving to next employee")
     goto_next_person
   end
@@ -131,22 +131,31 @@ class Crawler
     @logger.debug("gathering data from: #{@br.url}")
     employer_info =  {}
 
-    name = @br.element(:class, "org-top-card-module__name").text
+    name = try_gathering("org-top-card-module__name")
     employer_info[:name] = name
 
     url = @br.url
     employer_info[:url] = url
 
-    website = @br.element(:class, "org-about-company-module__company-page-url").text
+    website = try_gathering("org-about-company-module__company-page-url")
     employer_info[:website] = website
 
-    location = @br.element(:class, "org-about-company-module__headquarters").text
+    location = try_gathering("org-about-company-module__headquarters")
     employer_info[:location] = location
 
-    size = @br.element(:class, "org-about-company-module__company-staff-count-range").text
+    size = try_gathering("org-about-company-module__company-staff-count-range")
     employer_info[:size] = size
 
     employer_info
+  end
+
+  def try_gathering(class_list)
+    # searches for an element matching the passed in class list, and if it finds it, returns it's text content. Otherwise, returns nil
+    if @br.element(:class, class_list).exists?
+      @br.element(:class, class_list).text
+    else
+      nil
+    end
   end
 
   def goto_employer
